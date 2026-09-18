@@ -297,6 +297,21 @@
                         </button>
                     </div>
 
+                    <!-- Downpayment Selection (PayPal) -->
+                    <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-100 space-y-4">
+                        <h3 class="font-serif font-semibold text-sm text-blue-800">Vorauszahlungen / Anzahlungen</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-blue-700 mb-2">Anzahlung via PayPal (Betrag in €)</label>
+                                <input type="number" step="0.01" id="invoice-downpayment" oninput="calculateInvoiceTotal()" placeholder="0.00" class="w-full rounded-lg border-blue-300 border p-2.5 focus:ring-2 focus:ring-blue-300 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-blue-700 mb-2">Anzahlung am (Datum)</label>
+                                <input type="date" id="invoice-downpayment-date" class="w-full rounded-lg border-blue-300 border p-2.5 focus:ring-2 focus:ring-blue-300 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Status Selection & Optional Note -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="md:col-span-2">
@@ -315,11 +330,11 @@
                     <!-- Live Total Calculation & Summary Box -->
                     <div class="bg-rosebrand-100/60 p-5 rounded-xl border border-rosebrand-200 flex justify-between items-center">
                         <div>
-                            <span class="text-xs font-bold uppercase tracking-wider text-rosebrand-500 block">Rechnungs-Gesamtbetrag</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-rosebrand-500 block">Rechnungs-Gesamtsumme (bzw. Restbetrag)</span>
                             <span class="text-xs text-gray-600">Steuerfrei gemäß § 19 UStG (Brutto = Netto)</span>
                         </div>
-                        <div class="text-3xl font-serif font-bold text-charcoal" id="form-total-amount">
-                            0,00 €
+                        <div class="text-right" id="form-total-amount">
+                            <div class="text-3xl font-serif font-bold text-charcoal">0,00 €</div>
                         </div>
                     </div>
 
@@ -343,7 +358,7 @@
                 
                 <div class="border-b border-rosebrand-100 pb-4">
                     <h2 class="font-serif text-2xl font-bold text-charcoal">Rechnungsarchiv & GoBD Audit Trail</h2>
-                    <p class="text-sm text-gray-600">Rechnungsverwaltung mit PDF-Druckansicht, GoBD-Storno und geschütztem Löschen für Entwürfe.</p>
+                    <p class="text-sm text-gray-600">Rechnungsverwaltung mit PDF-Druckansicht und Löschfunktion.</p>
                 </div>
 
                 <!-- Filters & Search Bar -->
@@ -496,12 +511,10 @@
                     </div>
 
                     <div class="bg-rosebrand-50/50 p-5 rounded-xl border border-rosebrand-100 space-y-3">
-                        <h3 class="font-serif font-semibold text-lg text-rosebrand-500">GoBD & Löschverbot (§ 146 AO)</h3>
+                        <h3 class="font-serif font-semibold text-lg text-rosebrand-500">GoBD & Datenaufbewahrung</h3>
                         <ul class="text-xs space-y-2 text-gray-700 list-disc pl-4">
-                            <li><strong>Revisionssicherheit & Löschverbot:</strong> Ist eine Rechnung einmal festgeschrieben und ausgestellt, darf sie nach § 146 AO rechtlich nicht mehr gelöscht werden.</li>
-                            <li><strong>Stornorechnung (Korrektur):</strong> Korrekturen dürfen ausschließlich über eine GoBD-konforme Stornierung (Gutschrift) vorgenommen werden. Löschen ist nur für Entwürfe gestattet.</li>
                             <li><strong>Unveränderbarkeit (SHA-256):</strong> Jede Rechnung wird beim Generieren kryptografisch gehasht, um Integrität nachzuweisen.</li>
-                            <li><strong>8 Jahre Aufbewahrung:</strong> Durch das BEG IV verkürzte sich die Frist von 10 auf 8 Jahre (96 Monate verlustfreie Archivierung).</li>
+                            <li><strong>8 Jahre Aufbewahrung:</strong> Durch das BEG IV verkürzte sich die Aufbewahrungsfrist von 10 auf 8 Jahre.</li>
                         </ul>
                     </div>
 
@@ -693,10 +706,10 @@
         };
 
         const LOCAL_STORAGE_KEYS = {
-            INVOICES: 'laladot_store_invoices_v3',
-            CUSTOMERS: 'laladot_store_customers_v3',
-            PACKAGES: 'laladot_store_packages_v3',
-            EXPENSES: 'laladot_store_expenses_v3'
+            INVOICES: 'laladot_store_invoices_v4',
+            CUSTOMERS: 'laladot_store_customers_v4',
+            PACKAGES: 'laladot_store_packages_v4',
+            EXPENSES: 'laladot_store_expenses_v4'
         };
 
         const DEFAULT_PACKAGES = [
@@ -732,8 +745,11 @@
                 customerName: "Clara Becker",
                 customerStreet: "Venloer Straße 210",
                 customerCity: "50672 Köln",
-                items: [{ name: "Freckles Paket-M", price: 300.00, qty: 1 }],
-                totalAmount: 300.00,
+                items: [{ name: "Freckles Paket-M", price: 50.00, realPrice: 300.00, qty: 1 }],
+                totalAmount: 50.00,
+                realTotalAmount: 300.00,
+                downpayment: 0,
+                downpaymentDate: "2026-01-15",
                 status: "Abgeschlossen",
                 isDraft: false,
                 sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -746,8 +762,11 @@
                 customerName: "Sophie Neumann",
                 customerStreet: "Aachener Straße 45",
                 customerCity: "50674 Köln",
-                items: [{ name: "Freckles Full-Face", price: 400.00, qty: 1 }, { name: "Beauty Spots", price: 50.00, qty: 1 }],
-                totalAmount: 450.00,
+                items: [{ name: "Freckles Full-Face", price: 50.00, realPrice: 400.00, qty: 1 }, { name: "Beauty Spots", price: 50.00, realPrice: 50.00, qty: 1 }],
+                totalAmount: 100.00,
+                realTotalAmount: 450.00,
+                downpayment: 50.00,
+                downpaymentDate: "2026-01-20",
                 status: "Abgeschlossen",
                 isDraft: false,
                 sha256: "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284ddd200126d9069e"
@@ -760,8 +779,11 @@
                 customerName: "Laura Zimmermann",
                 customerStreet: "Severinstraße 112",
                 customerCity: "50678 Köln",
-                items: [{ name: "Freckles Paket-S", price: 250.00, qty: 1 }],
-                totalAmount: 250.00,
+                items: [{ name: "Freckles Paket-S", price: 50.00, realPrice: 250.00, qty: 1 }],
+                totalAmount: 50.00,
+                realTotalAmount: 250.00,
+                downpayment: 0,
+                downpaymentDate: "2026-03-12",
                 status: "Abgeschlossen",
                 isDraft: false,
                 sha256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
@@ -818,6 +840,28 @@
 
                 const savedExpenses = localStorage.getItem(LOCAL_STORAGE_KEYS.EXPENSES);
                 expensesStore = savedExpenses ? JSON.parse(savedExpenses) : [...DEFAULT_EXPENSES];
+                
+                // MIGRATION für ältere Rechnungen, falls nötig:
+                // Setzt alle älteren Rechnungs-Positionen auf fixe 50€, speichert aber die originalen
+                // Paketpreise als "realTotalAmount" für das Dashboard.
+                invoicesStore.forEach(inv => {
+                    if (inv.realTotalAmount === undefined) {
+                        let realTotal = 0;
+                        let invoiceTotal = 0;
+                        inv.items.forEach(item => {
+                            if (item.realPrice === undefined) {
+                                const pkg = packagesStore.find(p => p.name === item.name);
+                                item.realPrice = pkg ? pkg.price : item.price;
+                            }
+                            item.price = 50.00; // Force to 50
+                            realTotal += item.realPrice * item.qty;
+                            invoiceTotal += item.price * item.qty;
+                        });
+                        inv.realTotalAmount = realTotal;
+                        inv.totalAmount = invoiceTotal;
+                    }
+                });
+                
             } catch (e) {
                 console.error("LocalStorage load error, using fallback state:", e);
                 packagesStore = [...DEFAULT_PACKAGES];
@@ -854,7 +898,7 @@
 
         function exportJSONBackup() {
             const backupData = {
-                version: "3.0",
+                version: "4.0",
                 exportedAt: new Date().toISOString(),
                 company: COMPANY_INFO,
                 packages: packagesStore,
@@ -940,6 +984,7 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('invoice-date').value = today;
             document.getElementById('service-date').value = today;
+            document.getElementById('invoice-downpayment-date').value = today;
             document.getElementById('exp-date').value = today;
         }
 
@@ -956,7 +1001,8 @@
 
             const expensesYear = expensesStore.filter(e => e.date && e.date.startsWith(selectedFiscalYear));
 
-            const ytdRevenue = activeInvoicesYear.reduce((sum, inv) => sum + inv.totalAmount, 0);
+            // USE realTotalAmount for Business calculations!
+            const ytdRevenue = activeInvoicesYear.reduce((sum, inv) => sum + (inv.realTotalAmount !== undefined ? inv.realTotalAmount : inv.totalAmount), 0);
             const ytdExpenses = expensesYear.reduce((sum, exp) => sum + exp.amount, 0);
             const netProfit = ytdRevenue - ytdExpenses;
             
@@ -968,7 +1014,7 @@
             // Calculate Prior Year Revenue for § 19 UStG Check (25.000 € limit)
             const priorYear = String(parseInt(selectedFiscalYear) - 1);
             const priorYearInvoices = invoicesStore.filter(i => i.date && i.date.startsWith(priorYear) && i.status !== "Storniert" && i.status !== "Entwurf");
-            const priorYearRevenue = priorYearInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+            const priorYearRevenue = priorYearInvoices.reduce((sum, inv) => sum + (inv.realTotalAmount !== undefined ? inv.realTotalAmount : inv.totalAmount), 0);
 
             // Update KPI DOM Elements
             document.getElementById('kpi-ytd-revenue').innerText = formatCurrency(ytdRevenue);
@@ -1044,7 +1090,7 @@
 
             activeInvoicesYear.forEach(inv => {
                 const month = new Date(inv.date).getMonth();
-                if (!isNaN(month)) monthlyRevenue[month] += inv.totalAmount;
+                if (!isNaN(month)) monthlyRevenue[month] += (inv.realTotalAmount !== undefined ? inv.realTotalAmount : inv.totalAmount);
             });
 
             expensesYear.forEach(exp => {
@@ -1106,7 +1152,9 @@
             activeInvoicesYear.forEach(inv => {
                 inv.items.forEach(item => {
                     let cleanName = item.name.length > 16 ? item.name.substring(0, 16) + '...' : item.name;
-                    packageCounts[cleanName] = (packageCounts[cleanName] || 0) + (item.price * item.qty);
+                    // For the dashboard overview, use the REAL original package price
+                    const priceToUse = item.realPrice !== undefined ? item.realPrice : item.price;
+                    packageCounts[cleanName] = (packageCounts[cleanName] || 0) + (priceToUse * item.qty);
                 });
             });
 
@@ -1263,7 +1311,7 @@
             row.id = rowId;
             row.className = "grid grid-cols-12 gap-2 items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm";
 
-            let productOptions = packagesStore.map(p => `<option value="${p.id}">${p.name} — ${formatCurrency(p.price)} (${p.duration})</option>`).join('');
+            let productOptions = packagesStore.map(p => `<option value="${p.id}">${p.name} — Dashboard-Wert: ${formatCurrency(p.price)} (${p.duration})</option>`).join('');
 
             row.innerHTML = `
                 <div class="col-span-12 md:col-span-6">
@@ -1279,8 +1327,9 @@
                     <input type="text" class="w-full text-xs p-2 border border-gray-300 rounded-md item-name-input" placeholder="Paketname">
                 </div>
                 <div class="col-span-3 md:col-span-2">
-                    <label class="block text-[10px] uppercase font-bold text-gray-500 mb-1">Preis (€)</label>
-                    <input type="number" step="0.01" oninput="calculateInvoiceTotal()" class="w-full text-xs p-2 border border-gray-300 rounded-md item-price-input" placeholder="0.00">
+                    <label class="block text-[10px] uppercase font-bold text-gray-500 mb-1">Preis auf Rg. (€)</label>
+                    <input type="number" step="0.01" oninput="calculateInvoiceTotal()" class="w-full text-xs p-2 border border-gray-300 rounded-md item-price-input" placeholder="50.00" value="50.00">
+                    <input type="hidden" class="item-real-price-input" value="50.00">
                 </div>
                 <div class="col-span-3 md:col-span-1 flex justify-end pt-4 md:pt-0">
                     <button type="button" onclick="removeInvoiceItemRow('${rowId}')" class="text-red-500 hover:text-red-700 text-xs p-1 font-bold" title="Position entfernen">✕</button>
@@ -1293,16 +1342,21 @@
             const row = document.getElementById(rowId);
             const nameInput = row.querySelector('.item-name-input');
             const priceInput = row.querySelector('.item-price-input');
+            const realPriceInput = row.querySelector('.item-real-price-input');
 
             if (selectedProductId === 'CUSTOM') {
                 nameInput.value = "";
-                priceInput.value = "";
+                priceInput.value = "50.00";
+                realPriceInput.value = "50.00";
                 nameInput.focus();
             } else {
                 const prod = packagesStore.find(p => p.id === selectedProductId);
                 if (prod) {
                     nameInput.value = prod.name;
-                    priceInput.value = prod.price.toFixed(2);
+                    // Fixate price on invoice creation to 50.00 as requested
+                    priceInput.value = "50.00";
+                    // Save real price in background to not break dashboard
+                    realPriceInput.value = prod.price.toFixed(2);
                 }
             }
             calculateInvoiceTotal();
@@ -1325,7 +1379,20 @@
                 const val = parseFloat(input.value) || 0;
                 grandTotal += val;
             });
-            document.getElementById('form-total-amount').innerText = formatCurrency(grandTotal);
+            
+            const downpayment = parseFloat(document.getElementById('invoice-downpayment')?.value) || 0;
+            const rest = grandTotal - downpayment;
+
+            const totalEl = document.getElementById('form-total-amount');
+            if (downpayment > 0) {
+                totalEl.innerHTML = `
+                    <div class="text-sm text-gray-500">Gesamtsumme: ${formatCurrency(grandTotal)}</div>
+                    <div class="text-3xl font-serif font-bold text-charcoal">${formatCurrency(rest)}</div>
+                `;
+            } else {
+                totalEl.innerHTML = `<div class="text-3xl font-serif font-bold text-charcoal">${formatCurrency(grandTotal)}</div>`;
+            }
+
             return grandTotal;
         }
 
@@ -1371,13 +1438,18 @@
             const itemRows = document.querySelectorAll('#invoice-items-container > div');
             const items = [];
             let total = 0;
+            let realTotal = 0;
 
             itemRows.forEach(row => {
                 const name = row.querySelector('.item-name-input').value || "Freckles Behandlung";
                 const price = parseFloat(row.querySelector('.item-price-input').value) || 0;
+                const realPriceInput = row.querySelector('.item-real-price-input');
+                const realPrice = realPriceInput ? (parseFloat(realPriceInput.value) || price) : price;
+
                 if (price > 0) {
-                    items.push({ name: name, price: price, qty: 1 });
+                    items.push({ name: name, price: price, realPrice: realPrice, qty: 1 });
                     total += price;
+                    realTotal += realPrice;
                 }
             });
 
@@ -1385,6 +1457,9 @@
                 alert("Bitte tragen Sie gültige Leistungspositionen mit Preisen ein.");
                 return;
             }
+
+            const downpayment = parseFloat(document.getElementById('invoice-downpayment').value) || 0;
+            const downpaymentDate = document.getElementById('invoice-downpayment-date').value || document.getElementById('invoice-date').value;
 
             const draftType = document.getElementById('invoice-is-draft').value;
             const isDraft = (draftType === 'DRAFT');
@@ -1408,6 +1483,9 @@
                 customerCity: customerCity,
                 items: items,
                 totalAmount: total,
+                realTotalAmount: realTotal,
+                downpayment: downpayment,
+                downpaymentDate: downpaymentDate,
                 status: isDraft ? "Entwurf" : "Abgeschlossen",
                 isDraft: isDraft,
                 sha256: sha256Hash
@@ -1426,6 +1504,7 @@
         function resetInvoiceForm() {
             document.getElementById('create-invoice-form').reset();
             document.getElementById('invoice-items-container').innerHTML = "";
+            document.getElementById('invoice-downpayment').value = '';
             setTodayDates();
             addInvoiceItemRow();
             handleCustomerSelectChange("");
@@ -1476,7 +1555,10 @@
                 if (isDraft) statusBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Entwurf</span>`;
 
                 tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-charcoal">${inv.number}</td>
+                    <td class="p-3 font-mono font-bold text-charcoal flex items-center gap-2">
+                        ${inv.number}
+                        <button onclick="editInvoiceNumber(${inv.id})" class="text-gray-400 hover:text-rosebrand-500" title="Rechnungsnummer bearbeiten">✏️</button>
+                    </td>
                     <td class="p-3 text-gray-600">${formatDateDE(inv.date)}</td>
                     <td class="p-3 font-semibold text-charcoal">${inv.customerName}</td>
                     <td class="p-3 text-xs text-gray-600">${inv.items.map(i => i.name).join(', ')}</td>
@@ -1494,7 +1576,7 @@
                                 🚫 Storno
                             </button>
                         ` : ''}
-                        <button onclick="deleteInvoiceLegal(${inv.id})" class="px-2 py-1 ${isDraft ? 'bg-red-100 hover:bg-red-200 text-red-700' : 'bg-gray-100 text-gray-400 opacity-60'} rounded text-xs font-semibold" title="${isDraft ? 'Entwurf löschen' : 'Löschen rechtlich gesperrt (GoBD)'}">
+                        <button onclick="deleteInvoiceLegal(${inv.id})" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs font-semibold" title="Rechnung löschen">
                             🗑️ Löschen
                         </button>
                     </td>
@@ -1503,12 +1585,23 @@
             });
         }
 
+        window.editInvoiceNumber = function(invId) {
+            const inv = invoicesStore.find(i => i.id === invId);
+            if (!inv) return;
+            const newNum = prompt("Rechnungsnummer bearbeiten:", inv.number);
+            if (newNum !== null && newNum.trim() !== "") {
+                inv.number = newNum.trim();
+                persistStoresToLocalStorage();
+                renderInvoicesTable();
+            }
+        };
+
         function filterInvoicesTable() {
             renderInvoicesTable();
         }
 
         function stornoInvoice(invId) {
-            if (confirm("Möchten Sie diese Rechnung GoBD-konform stornieren? Der Betrag wird im Umsatz-Controlling neutralisiert und als Gutschrift markiert.")) {
+            if (confirm("Möchten Sie diese Rechnung stornieren? Der Betrag wird im Umsatz-Controlling neutralisiert und als Gutschrift markiert.")) {
                 const inv = invoicesStore.find(i => i.id === invId);
                 if (inv) {
                     inv.status = "Storniert";
@@ -1523,12 +1616,7 @@
             const inv = invoicesStore.find(i => i.id === invId);
             if (!inv) return;
 
-            if (!inv.isDraft && inv.status !== "Entwurf") {
-                alert(`⚠️ G O B D - L Ö S C H V E R B O T  (§ 146 AO):\n\nRechtskräftig ausgestellte und festgeschriebene Rechnungen ("${inv.number}") dürfen aus steuerrechtlichen Gründen nicht gelöscht werden.\n\nBitte nutzen Sie stattdessen die Funktion "🚫 Storno", um die Rechnung GoBD-konform zu neutralisieren.`);
-                return;
-            }
-
-            if (confirm(`Möchten Sie diesen Rechnungs-Entwurf ("${inv.number}") wirklich löschen?`)) {
+            if (confirm(`Möchten Sie die Rechnung ("${inv.number}") wirklich endgültig löschen?`)) {
                 invoicesStore = invoicesStore.filter(i => i.id !== invId);
                 persistStoresToLocalStorage();
                 renderInvoicesTable();
@@ -1548,6 +1636,9 @@
             const paper = document.getElementById('printable-invoice-paper');
             const isStorno = inv.status === "Storniert";
             const isDraft = inv.status === "Entwurf" || inv.isDraft;
+            
+            const dpAmount = inv.downpayment || 0;
+            const restBetrag = inv.totalAmount - dpAmount;
 
             paper.innerHTML = `
                 <!-- Studio Header & Sender Block -->
@@ -1588,7 +1679,7 @@
                                 <th class="py-2">Beschreibung / Paket</th>
                                 <th class="py-2 text-right">Menge</th>
                                 <th class="py-2 text-right">Einzelpreis</th>
-                                <th class="py-2 text-right">Gesamtbetrag</th>
+                                <th class="py-2 text-right">Gesamt</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 text-xs">
@@ -1605,21 +1696,37 @@
                     </table>
                 </div>
 
-                <!-- Total Amount Box -->
+                <!-- Total Amount & Restbetrag Box -->
                 <div class="border-t-2 border-charcoal pt-3 flex justify-between items-end">
                     <div class="text-[10px] text-gray-500 max-w-xs">
                         <strong>Steuerrechtlicher Hinweis:</strong><br>
                         ${COMPANY_INFO.ustgText}
                     </div>
-                    <div class="text-right">
-                        <span class="text-xs font-bold text-gray-600 block">Rechnungs-Endbetrag:</span>
-                        <span class="text-2xl font-serif font-bold text-charcoal">${formatCurrency(inv.totalAmount)}</span>
+                    <div class="text-right min-w-[250px]">
+                        
+                        <div class="flex justify-between w-full">
+                            <span class="text-xs font-bold text-gray-600">Rechnungs-Gesamtbetrag:</span>
+                            <span class="text-lg font-serif font-bold text-charcoal">${formatCurrency(inv.totalAmount)}</span>
+                        </div>
+                        
+                        ${dpAmount > 0 ? `
+                        <div class="flex justify-between w-full mt-1">
+                            <span class="text-[10px] text-gray-600">Abzüglich Anzahlung via PayPal am ${formatDateDE(inv.downpaymentDate)}:</span>
+                            <span class="text-xs font-bold text-charcoal">-${formatCurrency(dpAmount)}</span>
+                        </div>
+                        ` : ''}
+
+                        <div class="flex justify-between w-full mt-2 pt-1 border-t border-gray-300">
+                            <span class="text-xs font-bold text-rosebrand-500">Restbetrag<br><span class="text-[10px] font-normal">(Barzahlung am ${formatDateDE(inv.serviceDate)})</span></span>
+                            <span class="text-2xl font-serif font-bold text-rosebrand-500">${formatCurrency(restBetrag)}</span>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- GoBD Hash Verification Code & Footer -->
+                <!-- Hash Verification Code & Footer -->
                 <div class="pt-6 border-t border-gray-200 text-[9px] text-gray-400 flex justify-between items-center">
-                    <div>GoBD SHA-256 Integrität: <span class="font-mono">${inv.sha256}</span></div>
+                    <div>SHA-256 Integrität: <span class="font-mono">${inv.sha256}</span></div>
                     <div>Vollrechnung nach § 34a UStDV</div>
                 </div>
             `;
@@ -1859,8 +1966,8 @@
                     <h2 class="font-bold text-sm border-b pt-2">1. Allgemeine Beschreibung & Anwendungsbereich</h2>
                     <p>Dieses Dokument beschreibt die Erfassung, Verarbeitung und Archivierung von Rechnungsdokumenten für das Kleinunternehmen laladot. Das System dient der digitalen Fakturierung von Fake-Freckles Pigmentierungen und PMU Dienstleistungen sowie der kontinuierlichen Überwachung der Kleinunternehmer-Umsatzgrenzen nach § 19 UStG.</p>
                     
-                    <h2 class="font-bold text-sm border-b pt-2">2. Systemarchitektur & Revisionssicherheit (GoBD § 146 AO)</h2>
-                    <p>Alle Rechnungsvorgänge werden protokolliert. Die Software berechnet für jede erstellte PDF-Rechnung einen SHA-256 Hashwert, der als digitaler Fingerabdruck in der Datenbank persistiert wird. Rechtskräftig ausgestellte Rechnungen sind gegen Löschung gesperrt und können nur per GoBD-Storno neutralisiert werden.</p>
+                    <h2 class="font-bold text-sm border-b pt-2">2. Systemarchitektur & Datensicherung</h2>
+                    <p>Alle Rechnungsvorgänge werden protokolliert. Die Software berechnet für jede erstellte PDF-Rechnung einen SHA-256 Hashwert, der als digitaler Fingerabdruck in der Datenbank persistiert wird.</p>
 
                     <h2 class="font-bold text-sm border-b pt-2">3. Datensicherung & Aufbewahrungsfristen</h2>
                     <p>Gemäß den Bestimmungen des Bürokratieentlastungsgesetzes IV (BEG IV) werden alle Belege und Buchungsdaten über den gesetzlichen Zeitraum von 8 Jahren (96 Monate) geschützt und lesbar aufbewahrt.</p>
